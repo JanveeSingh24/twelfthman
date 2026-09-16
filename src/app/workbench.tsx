@@ -5,6 +5,8 @@ import {
   Gauge, LoaderCircle, LockKeyhole, Play, RotateCcw, ShieldCheck, Sparkles, Wifi, WifiOff, Zap,
 } from "lucide-react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import {
   approveCloudEnvelope,
@@ -98,6 +100,36 @@ export default function Workbench() {
 
   function protectedTermList(): string[] {
     return protectedTerms.split(",").map((term) => term.trim()).filter(Boolean);
+  }
+
+  function invalidateResult() {
+    setDecision(null);
+    setAnswer("");
+    setAnswerEngine("");
+    setLatency(0);
+    setRunState("idle");
+    setReviewedInstruction("");
+    setReviewedEvidence("");
+  }
+
+  function updateContext(value: string) {
+    setContext(value);
+    invalidateResult();
+  }
+
+  function updatePrompt(value: string) {
+    setPrompt(value);
+    invalidateResult();
+  }
+
+  function updateSensitivity(value: Sensitivity) {
+    setSensitivity(value);
+    invalidateResult();
+  }
+
+  function updateProtectedTerms(value: string) {
+    setProtectedTerms(value);
+    invalidateResult();
   }
 
   function appendLedger(entry: LedgerEntry) {
@@ -288,11 +320,11 @@ export default function Workbench() {
         <div className={styles.inputPane}>
           <div className={styles.sectionHeading}><div><span className={styles.stepNumber}>01</span><h2>Try any task</h2></div><span className={`${styles.labelBadge} ${effectiveSensitivity !== "public" ? styles.sensitive : ""}`}>{effectiveSensitivity !== "public" && <LockKeyhole size={13} />}{effectiveSensitivity}</span></div>
           <label className={styles.fieldLabel} htmlFor="context">Your content</label>
-          <textarea id="context" className={styles.contextInput} placeholder="Paste or type the content to process locally." value={context} onChange={(event) => setContext(event.target.value)} />
-          <div className={styles.fieldRow}><label className={styles.fieldLabel} htmlFor="prompt">What do you need?</label><label className={styles.sensitivityControl}><span>Sensitivity</span><select value={sensitivity} onChange={(event) => setSensitivity(event.target.value as Sensitivity)}><option value="public">Public</option><option value="internal">Internal</option><option value="confidential">Confidential</option></select></label></div>
-          <textarea id="prompt" className={styles.promptInput} placeholder="For example: Summarize this into key updates and next actions." value={prompt} onChange={(event) => setPrompt(event.target.value)} />
+          <textarea id="context" className={styles.contextInput} placeholder="Paste or type the content to process locally." value={context} onChange={(event) => updateContext(event.target.value)} disabled={isBusy} />
+          <div className={styles.fieldRow}><label className={styles.fieldLabel} htmlFor="prompt">What do you need?</label><label className={styles.sensitivityControl}><span>Sensitivity</span><select value={sensitivity} onChange={(event) => updateSensitivity(event.target.value as Sensitivity)} disabled={isBusy}><option value="public">Public</option><option value="internal">Internal</option><option value="confidential">Confidential</option></select></label></div>
+          <textarea id="prompt" className={styles.promptInput} placeholder="For example: Summarize this into key updates and next actions." value={prompt} onChange={(event) => updatePrompt(event.target.value)} disabled={isBusy} />
           <label className={styles.fieldLabel} htmlFor="protected-terms">Protected terms</label>
-          <input id="protected-terms" className={styles.protectedInput} placeholder="Comma-separated names, projects, or organizations" value={protectedTerms} onChange={(event) => setProtectedTerms(event.target.value)} />
+          <input id="protected-terms" className={styles.protectedInput} placeholder="Comma-separated names, projects, or organizations" value={protectedTerms} onChange={(event) => updateProtectedTerms(event.target.value)} disabled={isBusy} />
           <button className={styles.runButton} onClick={runRequest} disabled={isBusy || !prompt.trim() || !context.trim()}>{isBusy ? <LoaderCircle className={styles.spin} size={18} /> : <Play size={17} fill="currentColor" />}{runState === "routing" ? "Evaluating request" : "Route and run"}{!isBusy && <ArrowRight size={17} />}</button>
         </div>
 
@@ -306,10 +338,10 @@ export default function Workbench() {
               {decision.requiresSensitiveOverride && <div className={styles.policyNotice}><ShieldCheck size={19} /><div><strong>Sensitive override required</strong><span>Only reviewed, redacted evidence may cross the device boundary.</span></div></div>}
               {decision.route === "cloud-review" && !online && <div className={styles.offlineNotice}><WifiOff size={19} /><div><strong>Cloud lane unavailable</strong><span>The sanitized request can be reviewed now and queued in the next implementation slice.</span></div></div>}
               {decision.route === "cloud-review" && runState === "ready" && <div className={styles.evidencePanel}><div className={styles.evidenceHeading}><div><FileLock2 size={17} /><strong>Outbound evidence preview</strong></div><span>{decision.estimatedInputTokens} → {estimateTokens(reviewedEvidence)} estimated tokens</span></div>{decision.redactionCategories.length > 0 && <div className={styles.redactionChips}>{decision.redactionCategories.map((category) => <span key={category}>{category}</span>)}</div>}<label className={styles.fieldLabel} htmlFor="reviewed-instruction">Sanitized request</label><textarea id="reviewed-instruction" aria-label="Reviewed outbound instruction" className={styles.instructionEditor} value={reviewedInstruction} onChange={(event) => setReviewedInstruction(event.target.value)} /><label className={styles.fieldLabel} htmlFor="reviewed-evidence">Sanitized evidence</label><textarea id="reviewed-evidence" aria-label="Reviewed outbound evidence" className={styles.evidenceEditor} value={reviewedEvidence} onChange={(event) => setReviewedEvidence(event.target.value)} /><div className={styles.compressionBar}><span style={{ width: `${Math.max(5, (estimateTokens(reviewedEvidence) / decision.estimatedInputTokens) * 100)}%` }} /></div><button className={styles.cloudButton} onClick={online ? runCloud : queueCloud} disabled={!reviewedInstruction.trim() || !reviewedEvidence.trim()}>{online ? <Cloud size={17} /> : <WifiOff size={17} />}{online ? "Review complete — send evidence" : "Queue sanitized evidence locally"}<ArrowRight size={16} /></button></div>}
-              {answer && <div className={styles.answerPanel}><div className={styles.answerHeading}><div><Sparkles size={17} /><strong>Answer</strong></div><span>{answerEngine.replaceAll("-", " ")} · {latency} ms</span></div><p>{answer}</p></div>}
+              {answer && <AnswerPanel answer={answer} engine={answerEngine} latency={latency} />}
             </div>
           )}
-          {!decision && answer && <div className={styles.answerPanel}><div className={styles.answerHeading}><div><Sparkles size={17} /><strong>Answer</strong></div><span>{answerEngine.replaceAll("-", " ")} · {latency} ms</span></div><p>{answer}</p></div>}
+          {!decision && answer && <AnswerPanel answer={answer} engine={answerEngine} latency={latency} />}
         </div>
       </section>
 
@@ -324,4 +356,15 @@ export default function Workbench() {
 
 function Metric({ icon, label, value, accent = false }: { icon: React.ReactNode; label: string; value: string; accent?: boolean }) {
   return <div className={`${styles.metric} ${accent ? styles.metricAccent : ""}`}><span className={styles.metricIcon}>{icon}</span><div><span>{label}</span><strong>{value}</strong></div></div>;
+}
+
+function AnswerPanel({ answer, engine, latency }: { answer: string; engine: string; latency: number }) {
+  return (
+    <div className={styles.answerPanel}>
+      <div className={styles.answerHeading}><div><Sparkles size={17} /><strong>Answer</strong></div><span>{engine.replaceAll("-", " ")} · {latency} ms</span></div>
+      <div className={styles.markdownAnswer}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} skipHtml components={{ img: () => null }}>{answer}</ReactMarkdown>
+      </div>
+    </div>
+  );
 }

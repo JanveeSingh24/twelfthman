@@ -12,6 +12,38 @@ test("routes routine utility work locally", () => {
   assert.ok(decision.localSuitability >= 0.75);
 });
 
+test("routes a short reframe request as local rewrite work", () => {
+  const decision = routeRequest(
+    "reframe it",
+    "Hello Team, Thanks for email, we will get back to u",
+    "public",
+  );
+
+  assert.equal(decision.route, "local");
+  assert.equal(decision.taskClass, "rewrite");
+  assert.equal(decision.localSuitability, 0.92);
+});
+
+test("routes paraphrasing existing cloud content as fresh local rewrite work", () => {
+  const previousDecision = routeRequest(
+    "Analyze the API authentication architecture and recommend a migration strategy",
+    "The API currently uses Keycloak and returns 403 errors.",
+    "public",
+    { localModelReady: true },
+  );
+  const decision = routeRequest(
+    "Paraphrase this",
+    "The API is failing with 403 errors. Replace credential-based login with Microsoft SSO instead of Keycloak.",
+    "public",
+    { localModelReady: true },
+  );
+
+  assert.equal(previousDecision.route, "cloud-review");
+  assert.equal(decision.route, "local");
+  assert.equal(decision.taskClass, "rewrite");
+  assert.equal(decision.localSuitability, 0.92);
+});
+
 test("requires explicit override before sensitive complex work can escalate", () => {
   const decision = routeRequest(
     "Analyze the architecture trade-offs",
@@ -54,6 +86,7 @@ test("routes to cloud review when the local model is unavailable", () => {
 
   assert.equal(decision.route, "cloud-review");
   assert.equal(decision.localSuitability, 0);
+  assert.equal(decision.reason, "Local model unavailable; cloud review is required");
 });
 
 test("redacts configured protected terms before cloud review", () => {

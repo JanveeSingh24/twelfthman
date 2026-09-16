@@ -22,7 +22,7 @@ export type RouteDecision = {
 
 const ROUTINE_PATTERNS: Array<[TaskClass, RegExp]> = [
   ["summarize", /\b(summarize|summary|recap|tldr|tl;dr)\b/i],
-  ["rewrite", /\b(rewrite|rephrase|polish|tone|shorten)\b/i],
+  ["rewrite", /\b(rewrite|reframe|rephrase|paraphrase|polish|tone|shorten)\b/i],
   ["extract", /\b(extract|find|identify|list)\b/i],
   ["table", /\b(table|columns?|rows?|csv)\b/i],
   ["draft", /\b(draft|reply|email|response)\b/i],
@@ -131,7 +131,9 @@ export function routeRequest(
     sensitivity,
     localSuitability,
     requiresSensitiveOverride,
-    reason: route === "local"
+    reason: !localModelReady
+      ? "Local model unavailable; cloud review is required"
+      : route === "local"
       ? sensitivity === "public"
         ? "Task fits the measured local capability"
         : "Sensitive routine task stays on device by default"

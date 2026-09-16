@@ -4,6 +4,7 @@ import type { TokenCredential } from "@azure/core-auth";
 import type { CloudEnvelope } from "./cloud-envelope.ts";
 
 const AZURE_AI_SCOPE = "https://ai.azure.com/.default";
+const AZURE_COGNITIVE_SERVICES_SCOPE = "https://cognitiveservices.azure.com/.default";
 const credentials = new Map<string, TokenCredential>();
 
 export type CloudErrorKind =
@@ -54,6 +55,10 @@ type AzureErrorBody = {
 
 type AzureResponseBody = {
   output_text?: string;
+  output?: Array<{
+    type?: string;
+    content?: Array<{ type?: string; text?: string }>;
+  }>;
   model?: string;
   content_filters?: Array<{ blocked?: boolean }>;
   usage?: {
@@ -62,6 +67,16 @@ type AzureResponseBody = {
     total_tokens?: number;
   };
 };
+
+function responseText(body: AzureResponseBody): string {
+  if (body.output_text?.trim()) return body.output_text.trim();
+  return body.output
+    ?.flatMap((item) => item.content ?? [])
+    .filter((part) => part.type === "output_text" && typeof part.text === "string")
+    .map((part) => part.text?.trim())
+    .filter((text): text is string => Boolean(text))
+    .join("\n") ?? "";
+}
 
 export function hasAzureResponsesConfig(
   environment: Record<string, string | undefined> = process.env,
@@ -111,6 +126,12 @@ function responsesUrl(endpoint: string): string {
   return url.toString();
 }
 
+function tokenScope(endpoint: string): string {
+  return new URL(endpoint).hostname.toLowerCase().endsWith(".openai.azure.com")
+    ? AZURE_COGNITIVE_SERVICES_SCOPE
+    : AZURE_AI_SCOPE;
+}
+
 async function authenticationHeaders(
   config: AzureResponsesConfig,
   credential?: TokenCredential,
@@ -125,7 +146,7 @@ async function authenticationHeaders(
       tokenCredential = new DefaultAzureCredential({ tenantId: config.tenantId, processTimeoutInMs: 10_000 });
       credentials.set(credentialKey, tokenCredential);
     }
-    const accessToken = await tokenCredential.getToken(AZURE_AI_SCOPE, { abortSignal: signal });
+    const accessToken = await tokenCredential.getToken(tokenScope(config.endpoint), { abortSignal: signal });
     if (!accessToken) throw new Error("No access token returned.");
     return { Authorization: `Bearer ${accessToken.token}` };
   } catch {
@@ -212,7 +233,8 @@ export async function callAzureResponses(
   if (body.content_filters?.some((result) => result.blocked === true)) {
     throw new CloudClientError("content-filter", 400, "Azure guardrails blocked the sanitized request or response.");
   }
-  if (!body.output_text?.trim()) {
+  const answer = responseText(body);
+  if (!answer) {
     throw new CloudClientError("provider", 502, "Cloud specialist returned no answer.");
   }
   const inputTokens = body.usage?.input_tokens;
@@ -225,7 +247,7 @@ export async function callAzureResponses(
   }
 
   return {
-    answer: body.output_text,
+    answer,
     mode: "azure-openai-responses",
     model: body.model ?? config.deployment,
     usage: {

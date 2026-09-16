@@ -85,7 +85,26 @@
 .evidenceHeading div, .answerHeading div { display: flex; align-items: center; gap: 8px; }
 .evidenceHeading strong, .answerHeading strong { font-family: var(--font-barlow); font-size: 16px; text-transform: uppercase; }
 .evidenceHeading span, .answerHeading span { color: #66716a; font-family: var(--font-plex-mono); font-size: 9px; text-transform: uppercase; }
-.evidencePanel > p, .answerPanel > p { margin-top: 14px; white-space: pre-wrap; color: #3d4942; font-size: 12px; line-height: 1.7; }
+.evidencePanel > p { margin-top: 14px; white-space: pre-wrap; color: #3d4942; font-size: 12px; line-height: 1.7; }
+.markdownAnswer { margin-top: 14px; overflow-wrap: anywhere; color: #3d4942; font-size: 12px; line-height: 1.7; }
+.markdownAnswer > :first-child { margin-top: 0; }
+.markdownAnswer > :last-child { margin-bottom: 0; }
+.markdownAnswer h1, .markdownAnswer h2, .markdownAnswer h3, .markdownAnswer h4 { margin: 18px 0 8px; color: var(--ink); font-family: var(--font-barlow); line-height: 1.2; text-transform: none; }
+.markdownAnswer h1 { font-size: 22px; }
+.markdownAnswer h2 { font-size: 19px; }
+.markdownAnswer h3, .markdownAnswer h4 { font-size: 16px; }
+.markdownAnswer p, .markdownAnswer ul, .markdownAnswer ol, .markdownAnswer blockquote, .markdownAnswer pre, .markdownAnswer table { margin: 10px 0; }
+.markdownAnswer ul, .markdownAnswer ol { padding-left: 22px; }
+.markdownAnswer li + li { margin-top: 4px; }
+.markdownAnswer blockquote { padding: 8px 12px; border-left: 3px solid var(--yellow); background: #faf7e9; }
+.markdownAnswer code { padding: 2px 4px; background: #eeece4; font-family: var(--font-plex-mono); font-size: .92em; }
+.markdownAnswer pre { max-width: 100%; padding: 12px; overflow-x: auto; background: var(--ink); color: #f8f6ef; }
+.markdownAnswer pre code { padding: 0; background: transparent; color: inherit; }
+.markdownAnswer table { display: block; width: 100%; overflow-x: auto; border-collapse: collapse; }
+.markdownAnswer th, .markdownAnswer td { min-width: 110px; padding: 7px 9px; border: 1px solid var(--line); text-align: left; }
+.markdownAnswer th { background: #f3f1e9; font-family: var(--font-plex-mono); font-size: 10px; }
+.markdownAnswer a { color: var(--blue); text-decoration: underline; text-underline-offset: 2px; }
+.markdownAnswer hr { margin: 16px 0; border: 0; border-top: 1px solid var(--line); }
 .redactionChips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .redactionChips span { padding: 4px 7px; color: #8d3227; border: 1px solid #e6b7af; background: #fff3ef; font-family: var(--font-plex-mono); font-size: 8px; text-transform: uppercase; }
 .evidenceEditor { width: 100%; min-height: 120px; margin-top: 12px; padding: 12px; resize: vertical; outline: none; color: #3d4942; border: 1px solid var(--line); background: #fbfaf5; font-size: 12px; line-height: 1.7; }

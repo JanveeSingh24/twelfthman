@@ -69,12 +69,12 @@ Use synthetic or audience-entered data only. Clear the ledger before the judged 
 Copy `.env.example` to `.env.local` and set these server-only values:
 
 ```text
-AZURE_OPENAI_ENDPOINT=https://your-resource.services.ai.azure.com/openai/v1/responses
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/openai/v1/responses
 AZURE_OPENAI_DEPLOYMENT=your-deployment-name
 AZURE_TENANT_ID=your-tenant-id
 ```
 
-No API key is required. The Next.js server uses `DefaultAzureCredential` to obtain a token for `https://ai.azure.com/.default`. During local development it can use your VS Code, Azure CLI, or Azure PowerShell session; on an Azure host the same code can use managed identity. The signed-in principal needs inference access such as **Foundry User** at project or account scope. `AZURE_OPENAI_API_KEY` remains an optional fallback and is never bundled into the browser.
+No API key is required. The Next.js server uses `DefaultAzureCredential` and selects the token audience from the endpoint host: `https://cognitiveservices.azure.com/.default` for Azure OpenAI hosts and `https://ai.azure.com/.default` for Foundry API hosts. During local development it can use your VS Code, Azure CLI, or Azure PowerShell session; on an Azure host the same code can use managed identity. The signed-in principal needs inference access such as **Foundry User** at project or account scope. `AZURE_OPENAI_API_KEY` remains an optional fallback and is never bundled into the browser.
 
 If the portal shows a blank key and inference returns `PermissionDenied`, open the Foundry account or project in Azure Portal, select **Access control (IAM)**, and assign **Foundry User** to the identity running TwelfthMan. Role changes can take several minutes to propagate. Creating a deployment does not necessarily grant its creator data-plane inference permission.
 

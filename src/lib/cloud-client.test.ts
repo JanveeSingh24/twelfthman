@@ -59,6 +59,22 @@ test("sends a stateless, capped Responses v1 request and parses actual usage", a
   assert.deepEqual(result.usage, { inputTokens: 41, outputTokens: 8, totalTokens: 49 });
 });
 
+test("extracts answer text from the Azure Responses output array", async () => {
+  const result = await callAzureResponses(ENVELOPE, {
+    config: CONFIG,
+    fetcher: (async () => Response.json({
+      output: [{
+        type: "message",
+        content: [{ type: "output_text", text: "Use a tested rollback checkpoint." }],
+      }],
+      model: "specialist-model",
+      usage: { input_tokens: 41, output_tokens: 8, total_tokens: 49 },
+    })) as typeof fetch,
+  });
+
+  assert.equal(result.answer, "Use a tested rollback checkpoint.");
+});
+
 test("uses a Microsoft Entra bearer token when no API key exists", async () => {
   let capturedUrl = "";
   let capturedHeaders: Record<string, string> = {};
@@ -91,6 +107,30 @@ test("uses a Microsoft Entra bearer token when no API key exists", async () => {
   assert.equal(capturedUrl, "https://twelfthmanai.services.ai.azure.com/openai/v1/responses");
   assert.equal(capturedHeaders.Authorization, "Bearer entra-token");
   assert.equal("api-key" in capturedHeaders, false);
+});
+
+test("uses the Cognitive Services token scope for Azure OpenAI hosts", async () => {
+  let requestedScope = "";
+  const credential = {
+    getToken: async (scopes: string | string[]) => {
+      requestedScope = String(scopes);
+      return { token: "entra-token", expiresOnTimestamp: Date.now() + 60_000 };
+    },
+  };
+
+  await callAzureResponses(ENVELOPE, {
+    config: {
+      endpoint: "https://example.openai.azure.com/openai/v1/responses",
+      deployment: "specialist-model",
+    },
+    credential,
+    fetcher: (async () => Response.json({
+      output_text: "Keyless response.",
+      usage: { input_tokens: 12, output_tokens: 3, total_tokens: 15 },
+    })) as typeof fetch,
+  });
+
+  assert.equal(requestedScope, "https://cognitiveservices.azure.com/.default");
 });
 
 test("rejects non-Azure endpoints before acquiring credentials", async () => {
