@@ -297,7 +297,7 @@ export default function Workbench() {
       <header className={styles.topbar}>
         <div className={styles.brand}><span className={styles.brandMark}>12</span><span>TWELFTHMAN</span></div>
         <div className={styles.statusCluster}>
-          <span className={`${styles.statusPill} ${online && cloudConfigured ? styles.online : styles.offline}`}>{connectivity === "checking" ? <LoaderCircle className={styles.spin} size={14} /> : online ? <Wifi size={14} /> : <WifiOff size={14} />}{connectivity === "checking" ? "Checking cloud" : !online ? "Offline mode" : cloudConfigured ? "Azure configured" : "Azure setup needed"}</span>
+          <span className={`${styles.statusPill} ${online && cloudConfigured ? styles.online : styles.offline}`}>{connectivity === "checking" ? <LoaderCircle className={styles.spin} size={14} /> : online ? <Wifi size={14} /> : <WifiOff size={14} />}{connectivity === "checking" ? "Checking cloud" : !online ? cloudConfigured ? "Offline mode · Azure configured" : "Offline mode" : cloudConfigured ? "Azure configured" : "Azure setup needed"}</span>
           {engineStatus === "unavailable" || engineStatus === "error" ? <button className={styles.modelButton} onClick={() => void prepareDeviceModel()}><Cpu size={14} />Retry local runtime</button> : <span className={styles.statusPill}><Cpu size={14} />{engineStatus === "ready" ? "Foundry Local ready" : engineStatus === "running" ? "Foundry Local running" : "Checking local runtime"}</span>}
         </div>
       </header>

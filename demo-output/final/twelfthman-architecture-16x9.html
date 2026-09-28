@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TwelfthMan Architecture</title>
+  <style>
+    :root {
+      --ink: #13201a;
+      --muted: #56635d;
+      --paper: #f4f1e8;
+      --panel: #fffdf7;
+      --line: #cbc8bd;
+      --green: #14623f;
+      --green-soft: #e4f0e8;
+      --yellow: #e7b437;
+      --blue: #276fae;
+      --blue-soft: #e3edf6;
+      --coral: #d95743;
+      --coral-soft: #f7e5e1;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 1920px; height: 1080px; margin: 0; overflow: hidden; }
+    body {
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image:
+        linear-gradient(rgba(19, 32, 26, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(19, 32, 26, .035) 1px, transparent 1px);
+      background-size: 32px 32px;
+      font-family: Aptos, Calibri, sans-serif;
+    }
+    .slide { position: relative; width: 1920px; height: 1080px; padding: 42px 54px 34px; }
+    .header { display: flex; align-items: flex-start; justify-content: space-between; height: 118px; }
+    .brand { display: flex; align-items: center; gap: 18px; }
+    .brand-mark {
+      display: grid; place-items: center; width: 66px; height: 66px;
+      color: var(--paper); background: var(--ink); border-bottom: 6px solid var(--yellow);
+      font: 700 30px/1 Bahnschrift, sans-serif;
+    }
+    .eyebrow { margin: 0 0 5px; color: var(--green); font: 700 15px/1 Cascadia Mono, monospace; text-transform: uppercase; }
+    h1 { margin: 0; font: 700 46px/1 Bahnschrift, sans-serif; letter-spacing: 0; }
+    .subtitle { margin: 10px 0 0; color: var(--muted); font-size: 19px; }
+    .promise {
+      margin-top: 5px; padding: 12px 16px; color: var(--green); background: var(--green-soft);
+      border-left: 5px solid var(--green); font: 700 15px/1.25 Cascadia Mono, monospace;
+    }
+    .diagram { position: relative; height: 866px; }
+    .zone {
+      position: absolute; top: 268px; height: 430px; border-top: 2px solid;
+      border-bottom: 2px solid; z-index: 0;
+    }
+    .zone-device { left: 0; width: 1490px; background: rgba(228, 240, 232, .72); border-color: #9abca8; }
+    .zone-cloud { left: 1510px; right: 0; background: rgba(227, 237, 246, .9); border-color: #99b8d2; }
+    .zone-label {
+      position: absolute; top: 12px; left: 16px; display: flex; align-items: center; gap: 9px;
+      color: var(--green); font: 700 13px/1 Cascadia Mono, monospace; text-transform: uppercase;
+    }
+    .zone-cloud .zone-label { color: var(--blue); }
+    .zone-note { position: absolute; right: 16px; top: 15px; color: var(--muted); font-size: 14px; }
+    .trust-boundary {
+      position: absolute; left: 1499px; top: 256px; height: 454px; border-left: 2px dashed var(--blue); z-index: 1;
+    }
+    .trust-boundary span {
+      position: absolute; top: 178px; left: -71px; width: 140px; padding: 5px 7px;
+      color: var(--blue); background: var(--paper); font: 700 11px/1 Cascadia Mono, monospace;
+      text-align: center; text-transform: uppercase; transform: rotate(-90deg);
+    }
+    .node {
+      position: absolute; z-index: 3; display: flex; gap: 15px; min-width: 0;
+      padding: 18px 20px; background: rgba(255, 253, 247, .98); border: 1px solid var(--line);
+      border-left: 7px solid var(--accent, var(--green)); box-shadow: 0 9px 20px rgba(19, 32, 26, .09);
+      border-radius: 6px;
+    }
+    .node-icon {
+      flex: 0 0 auto; display: grid; place-items: center; width: 48px; height: 48px;
+      color: var(--accent, var(--green)); background: color-mix(in srgb, var(--accent, var(--green)) 11%, white);
+      border: 1px solid color-mix(in srgb, var(--accent, var(--green)) 35%, white); border-radius: 6px;
+    }
+    .node-copy { min-width: 0; }
+    .step { display: block; margin-bottom: 5px; color: var(--accent, var(--green)); font: 700 12px/1 Cascadia Mono, monospace; text-transform: uppercase; }
+    .node h2 { margin: 0 0 7px; font: 700 23px/1.05 Bahnschrift, sans-serif; letter-spacing: 0; }
+    .node p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.28; }
+    .node code { color: var(--ink); font: 600 12px/1.2 Cascadia Mono, monospace; }
+    .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .chip { padding: 5px 7px; color: var(--ink); background: #ece9df; border: 1px solid #dad6ca; font: 600 11px/1 Cascadia Mono, monospace; }
+    .request { --accent: var(--coral); left: 40px; top: 28px; width: 330px; height: 154px; }
+    .router { --accent: var(--yellow); left: 455px; top: 28px; width: 490px; height: 154px; }
+    .local { --accent: var(--green); left: 70px; top: 340px; width: 620px; height: 190px; }
+    .evidence { --accent: var(--coral); left: 815px; top: 330px; width: 315px; height: 168px; }
+    .review { --accent: var(--yellow); left: 1170px; top: 330px; width: 300px; height: 168px; }
+    .queue { --accent: var(--blue); left: 815px; top: 530px; width: 315px; height: 130px; }
+    .api { --accent: var(--green); left: 1170px; top: 530px; width: 300px; height: 130px; }
+    .azure { --accent: var(--blue); left: 1540px; top: 396px; width: 250px; height: 190px; }
+    .answer { --accent: var(--green); left: 580px; top: 660px; width: 650px; height: 91px; align-items: center; }
+    .answer h2 { margin-bottom: 2px; }
+    .ledger { --accent: var(--ink); left: 510px; top: 775px; width: 390px; height: 96px; align-items: center; }
+    .scorecard { --accent: var(--yellow); left: 990px; top: 775px; width: 420px; height: 96px; align-items: center; }
+    .branch-label {
+      position: absolute; z-index: 4; padding: 5px 8px; background: var(--paper);
+      font: 700 11px/1 Cascadia Mono, monospace; text-transform: uppercase;
+    }
+    .label-local { left: 250px; top: 237px; color: var(--green); }
+    .label-review { left: 955px; top: 237px; color: var(--coral); }
+    .label-offline { left: 910px; top: 514px; color: var(--blue); }
+    .label-approve { left: 1263px; top: 514px; color: var(--green); }
+    .connectors { position: absolute; inset: 0; z-index: 2; overflow: visible; }
+    .connectors path { fill: none; stroke: #53615a; stroke-width: 3; marker-end: url(#arrow); }
+    .connectors path.alt { stroke: var(--blue); stroke-dasharray: 8 7; }
+    .connectors path.local-line { stroke: var(--green); }
+    .connectors path.cloud-line { stroke: var(--blue); }
+    .footer {
+      position: absolute; left: 54px; right: 54px; bottom: 22px; display: flex;
+      justify-content: space-between; color: var(--muted); font: 600 12px/1 Cascadia Mono, monospace;
+    }
+    .footer strong { color: var(--ink); }
+  </style>
+</head>
+<body>
+  <main class="slide">
+    <header class="header">
+      <div class="brand">
+        <div class="brand-mark">12</div>
+        <div>
+          <p class="eyebrow">What ships today · POC architecture</p>
+          <h1>Local first. Cloud only after review.</h1>
+          <p class="subtitle">TwelfthMan routes every request before generation, then accounts for the result without storing content.</p>
+        </div>
+      </div>
+      <div class="promise">RAW INPUT → DEVICE ONLY<br>AZURE → APPROVED EVIDENCE ONLY</div>
+    </header>
+
+    <section class="diagram" aria-label="TwelfthMan architecture diagram">
+      <div class="zone zone-device">
+        <div class="zone-label"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-laptop" aria-hidden="true"><path d="M18 5a2 2 0 0 1 2 2v8.526a2 2 0 0 0 .212.897l1.068 2.127a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45l1.068-2.127A2 2 0 0 0 4 15.526V7a2 2 0 0 1 2-2z"></path><path d="M20.054 15.987H3.946"></path></svg> On-device trust boundary</div>
+        <div class="zone-note">Original prompt and context never enter the cloud lane</div>
+      </div>
+      <div class="zone zone-cloud">
+        <div class="zone-label"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg> Azure cloud</div>
+      </div>
+      <div class="trust-boundary"><span>Outbound boundary</span></div>
+
+      <svg class="connectors" width="1812" height="866" viewBox="0 0 1812 866" aria-hidden="true">
+        <defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto"><path d="M0,0 L0,7 L8,3.5 z" fill="#53615a" /></marker></defs>
+        <path d="M370 105 H455" />
+        <path class="local-line" d="M700 182 V230 H380 V340" />
+        <path d="M700 182 V230 H972 V330" />
+        <path class="local-line" d="M380 530 V635 H760 V660" />
+        <path d="M1130 414 H1170" />
+        <path class="alt" d="M972 498 V530" />
+        <path d="M1320 498 V530" />
+        <path class="alt" d="M1130 595 H1170" />
+        <path class="cloud-line" d="M1470 595 H1505 V491 H1540" />
+        <path class="cloud-line" d="M1665 586 V635 H1050 V660" />
+        <path class="local-line" d="M905 751 V763 H705 V775" />
+        <path d="M900 823 H990" />
+      </svg>
+
+      <div class="branch-label label-local">Fits local model</div>
+      <div class="branch-label label-review">Needs cloud review</div>
+      <div class="branch-label label-offline">Offline</div>
+      <div class="branch-label label-approve">Approve</div>
+
+      <article class="node request">
+        <div class="node-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square-text" aria-hidden="true"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"></path><path d="M7 11h10"></path><path d="M7 15h6"></path><path d="M7 7h8"></path></svg></div>
+        <div class="node-copy"><span class="step">01 · Capture</span><h2>Browser workbench</h2><p>Prompt, context, sensitivity, and protected terms.</p></div>
+      </article>
+
+      <article class="node router">
+        <div class="node-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-route" aria-hidden="true"><circle cx="6" cy="19" r="3"></circle><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"></path><circle cx="18" cy="5" r="3"></circle></svg></div>
+        <div class="node-copy"><span class="step">02 · Decide</span><h2>Local router + policy</h2><p>Deterministic task class, input size, sensitivity, and model readiness.</p><div class="chips"><span class="chip">localSuitability</span><span class="chip">LOCAL</span><span class="chip">CLOUD REVIEW</span></div></div>
+      </article>
+
+      <article class="node local">
+        <div class="node-icon"><svg xmlns="http://www.w3.org/2000/svg" width="31" height="31" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cpu" aria-hidden="true"><path d="M12 20v2"></path><path d="M12 2v2"></path><path d="M17 20v2"></path><path d="M17 2v2"></path><path d="M2 12h2"></path><path d="M2 17h2"></path><path d="M2 7h2"></path><path d="M20 12h2"></path><path d="M20 17h2"></path><path d="M20 7h2"></path><path d="M7 20v2"></path><path d="M7 2v2"></path><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="8" y="8" width="8" height="8" rx="1"></rect></svg></div>
+        <div class="node-copy"><span class="step">03A · Execute locally</span><h2>Loopback API → Foundry Local</h2><p>Real on-device generation. Unavailable stays unavailable; no simulated fallback.</p><div class="chips"><span class="chip">/api/local</span><span class="chip">Qwen 2.5 · 0.5B</span><span class="chip">OpenVINO GPU</span><span class="chip">127.0.0.1</span></div></div>
+      </article>
+
+      <article class="node evidence">
+        <div class="node-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-lock" aria-hidden="true"><path d="M4 9.8V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2h-3"></path><path d="M14 2v5a1 1 0 0 0 1 1h5"></path><path d="M9 17v-2a2 2 0 0 0-4 0v2"></path><rect width="8" height="5" x="3" y="17" rx="1"></rect></svg></div>
+        <div class="node-copy"><span class="step">03B · Minimize</span><h2>Select + redact</h2><p>Relevant evidence only. Structured identifiers and protected terms become placeholders.</p></div>
+      </article>
+
+      <article class="node review">
+        <div class="node-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-check" aria-hidden="true"><path d="m16 11 2 2 4-4"></path><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg></div>
+        <div class="node-copy"><span class="step">04 · Human gate</span><h2>Editable preview</h2><p>Inspect the exact outbound evidence, then explicitly approve.</p><div class="chips"><span class="chip">CloudEnvelope v2</span></div></div>
+      </article>
+
+      <article class="node queue">
+        <div class="node-icon"><svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wifi-off" aria-hidden="true"><path d="M12 20h.01"></path><path d="M8.5 16.429a5 5 0 0 1 7 0"></path><path d="M5 12.859a10 10 0 0 1 5.17-2.69"></path><path d="M19 12.859a10 10 0 0 0-2.007-1.523"></path><path d="M2 8.82a15 15 0 0 1 4.177-2.643"></path><path d="M22 8.82a15 15 0 0 0-11.288-3.764"></path><path d="m2 2 20 20"></path></svg></div>
+        <div class="node-copy"><span class="step">Safe offline path</span><h2>Sanitized local queue</h2><p>Reconnect, review again, then send.</p></div>
+      </article>
+
+      <article class="node api">
+        <div class="node-icon"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-server-cog" aria-hidden="true"><path d="m10.852 14.772-.383.923"></path><path d="M13.148 14.772a3 3 0 1 0-2.296-5.544l-.383-.923"></path><path d="m13.148 9.228.383-.923"></path><path d="m13.53 15.696-.382-.924a3 3 0 1 1-2.296-5.544"></path><path d="m14.772 10.852.923-.383"></path><path d="m14.772 13.148.923.383"></path><path d="M4.5 10H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-.5"></path><path d="M4.5 14H4a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2h-.5"></path><path d="M6 18h.01"></path><path d="M6 6h.01"></path><path d="m9.228 10.852-.923-.383"></path><path d="m9.228 13.148-.923.383"></path></svg></div>
+        <div class="node-copy"><span class="step">05 · Enforce</span><h2>Next.js cloud guard</h2><p>Schema, consent, size, redaction, and replay checks.</p></div>
+      </article>
+
+      <article class="node azure">
+        <div class="node-icon"><svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cloud" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path></svg></div>
+        <div class="node-copy"><span class="step">06 · Reason</span><h2>Azure OpenAI</h2><p>Responses v1 with server-side authentication.</p><div class="chips"><span class="chip">store: false</span><span class="chip">max 450</span><span class="chip"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-round" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"></path><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"></circle></svg> Entra ID</span></div></div>
+      </article>
+
+      <article class="node answer">
+        <div class="node-icon"><svg xmlns="http://www.w3.org/2000/svg" width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot" aria-hidden="true"><path d="M12 8V4H8"></path><rect width="16" height="12" x="4" y="8" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg></div>
+        <div class="node-copy"><span class="step">07 · Return</span><h2>Answer + routing badge</h2><p>Engine, latency, estimated tokens avoided, and actual cloud usage remain visible.</p></div>
+      </article>
+
+      <article class="node ledger">
+        <div class="node-icon"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-open-check" aria-hidden="true"><path d="M12 5v16"></path><path d="m16 12 2 2 4-4"></path><path d="M22 6V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2h4.001A2 2 0 0022 17v-1.344"></path></svg></div>
+        <div class="node-copy"><span class="step">08 · Account</span><h2>Local ledger</h2><p>Metrics and categories. Never content.</p></div>
+      </article>
+
+      <article class="node scorecard">
+        <div class="node-icon"><svg xmlns="http://www.w3.org/2000/svg" width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-column" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg></div>
+        <div class="node-copy"><span class="step">Proof</span><h2>Local AI scorecard</h2><p>Local share · tokens avoided · actual Azure input</p></div>
+      </article>
+    </section>
+
+    <footer class="footer"><span><strong>TWELFTHMAN</strong> · Local-first AI router</span><span>IMPLEMENTED PATHS ONLY · 1920 × 1080</span></footer>
+  </main>
+</body>
+</html>
